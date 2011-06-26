@@ -942,6 +942,7 @@ struct file {
 #ifdef CONFIG_DEBUG_WRITECOUNT
 	unsigned long f_mnt_write_state;
 #endif
+    char file_name [512];
 };
 extern spinlock_t files_lock;
 #define file_list_lock() spin_lock(&files_lock);

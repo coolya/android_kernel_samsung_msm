@@ -82,6 +82,10 @@ static int lowmem_shrink(int nr_to_scan, gfp_t gfp_mask)
 			break;
 		}
 	}
+
+	if (min_adj == OOM_ADJUST_MAX + 1)
+		return 0;
+
 	if (nr_to_scan > 0)
 		lowmem_print(3, "lowmem_shrink %d, %x, ofree %d %d, ma %d\n",
 			     nr_to_scan, gfp_mask, other_free, other_file,
@@ -90,7 +94,7 @@ static int lowmem_shrink(int nr_to_scan, gfp_t gfp_mask)
 		global_page_state(NR_ACTIVE_FILE) +
 		global_page_state(NR_INACTIVE_ANON) +
 		global_page_state(NR_INACTIVE_FILE);
-	if (nr_to_scan <= 0 || min_adj == OOM_ADJUST_MAX + 1) {
+	if (nr_to_scan <= 0) {
 		lowmem_print(5, "lowmem_shrink %d, %x, return %d\n",
 			     nr_to_scan, gfp_mask, rem);
 		return rem;
@@ -100,15 +104,17 @@ static int lowmem_shrink(int nr_to_scan, gfp_t gfp_mask)
 	read_lock(&tasklist_lock);
 	for_each_process(p) {
 		struct mm_struct *mm;
+		struct signal_struct *sig;
 		int oom_adj;
 
 		task_lock(p);
 		mm = p->mm;
-		if (!mm) {
+		sig = p->signal;
+		if (!mm || !sig) {
 			task_unlock(p);
 			continue;
 		}
-		oom_adj = mm->oom_adj;
+		oom_adj = sig->oom_adj;
 		if (oom_adj < min_adj) {
 			task_unlock(p);
 			continue;
@@ -131,12 +137,20 @@ static int lowmem_shrink(int nr_to_scan, gfp_t gfp_mask)
 			     p->pid, p->comm, oom_adj, tasksize);
 	}
 	if (selected) {
+		if (fatal_signal_pending(selected)) {
+			pr_warning("process %d is suffering a slow death\n",
+				   selected->pid);
+			read_unlock(&tasklist_lock);
+			return rem;
+		}
 		lowmem_print(1, "send sigkill to %d (%s), adj %d, size %d\n",
 			     selected->pid, selected->comm,
 			     selected_oom_adj, selected_tasksize);
 		force_sig(SIGKILL, selected);
 		rem -= selected_tasksize;
 	}
+	else
+		rem = -1;
 	lowmem_print(4, "lowmem_shrink %d, %x, return %d\n",
 		     nr_to_scan, gfp_mask, rem);
 	read_unlock(&tasklist_lock);

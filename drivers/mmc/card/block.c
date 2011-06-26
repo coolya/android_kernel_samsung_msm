@@ -44,9 +44,9 @@
 MODULE_ALIAS("mmc:block");
 
 /*
- * max 8 partitions per card
+ * max 16 partitions per card
  */
-#define MMC_SHIFT	3
+#define MMC_SHIFT	4
 #define MMC_NUM_MINORS	(256 >> MMC_SHIFT)
 
 static DECLARE_BITMAP(dev_use, MMC_NUM_MINORS);
@@ -241,12 +241,54 @@ static u32 get_card_status(struct mmc_card *card, struct request *req)
 	return cmd.resp[0];
 }
 
+static int
+mmc_blk_set_blksize(struct mmc_blk_data *md, struct mmc_card *card)
+{
+	struct mmc_command cmd;
+	int err;
+
+	/* Block-addressed cards ignore MMC_SET_BLOCKLEN. */
+	if (mmc_card_blockaddr(card))
+		return 0;
+
+	mmc_claim_host(card->host);
+	cmd.opcode = MMC_SET_BLOCKLEN;
+	cmd.arg = 512;
+	cmd.flags = MMC_RSP_SPI_R1 | MMC_RSP_R1 | MMC_CMD_AC;
+	err = mmc_wait_for_cmd(card->host, &cmd, 5);
+	mmc_release_host(card->host);
+
+	if (err) {
+		printk(KERN_ERR "%s: unable to set block size to %d: %d\n",
+			md->disk->disk_name, cmd.arg, err);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+
 static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 {
 	struct mmc_blk_data *md = mq->data;
 	struct mmc_card *card = md->queue.card;
 	struct mmc_blk_request brq;
 	int ret = 1, disable_multi = 0;
+
+#if 1	//defined(CONFIG_MACH_LUCAS)	
+	int single_retry = 2;
+	int multi_retry = 2;
+#else
+	int single_retry = 5;
+	int multi_retry = 5;
+#endif
+
+#ifdef CONFIG_MMC_BLOCK_DEFERRED_RESUME
+	if (mmc_bus_needs_resume(card->host)) {
+		mmc_resume_bus(card->host);
+		mmc_blk_set_blksize(md, card);
+	}
+#endif
 
 	mmc_claim_host(card->host);
 
@@ -344,6 +386,11 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 		 */
 		if (brq.cmd.error || brq.data.error || brq.stop.error) {
 			if (brq.data.blocks > 1 && rq_data_dir(req) == READ) {
+				if(multi_retry > 0)
+				{
+					--multi_retry;
+					continue;
+				}
 				/* Redo read one sector at a time */
 				printk(KERN_WARNING "%s: retrying using single "
 				       "block read\n", req->rq_disk->disk_name);
@@ -351,8 +398,20 @@ static int mmc_blk_issue_rq(struct mmc_queue *mq, struct request *req)
 				continue;
 			}
 			status = get_card_status(card, req);
+		if((brq.cmd.error || brq.data.error) && brq.data.blocks <= 1 && single_retry>0)
+		{
+			--single_retry;
+			continue;
+		}
+		} else if (disable_multi == 1) {
+			disable_multi = 0;
 		}
 
+		if( brq.data.blocks <= 1)
+		{
+			multi_retry=5;
+			single_retry=5;
+		}
 		if (brq.cmd.error) {
 			printk(KERN_ERR "%s: error %d sending read/write "
 			       "command, response %#x, card status %#x\n",
@@ -562,32 +621,6 @@ static struct mmc_blk_data *mmc_blk_alloc(struct mmc_card *card)
 	return ERR_PTR(ret);
 }
 
-static int
-mmc_blk_set_blksize(struct mmc_blk_data *md, struct mmc_card *card)
-{
-	struct mmc_command cmd;
-	int err;
-
-	/* Block-addressed cards ignore MMC_SET_BLOCKLEN. */
-	if (mmc_card_blockaddr(card))
-		return 0;
-
-	mmc_claim_host(card->host);
-	cmd.opcode = MMC_SET_BLOCKLEN;
-	cmd.arg = 512;
-	cmd.flags = MMC_RSP_SPI_R1 | MMC_RSP_R1 | MMC_CMD_AC;
-	err = mmc_wait_for_cmd(card->host, &cmd, 5);
-	mmc_release_host(card->host);
-
-	if (err) {
-		printk(KERN_ERR "%s: unable to set block size to %d: %d\n",
-			md->disk->disk_name, cmd.arg, err);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static int mmc_blk_probe(struct mmc_card *card)
 {
 	struct mmc_blk_data *md;
@@ -616,6 +649,9 @@ static int mmc_blk_probe(struct mmc_card *card)
 		cap_str, md->read_only ? "(ro)" : "");
 
 	mmc_set_drvdata(card, md);
+#ifdef CONFIG_MMC_BLOCK_DEFERRED_RESUME
+	mmc_set_bus_resume_policy(card->host, 1);
+#endif
 	add_disk(md->disk);
 	return 0;
 
@@ -640,6 +676,9 @@ static void mmc_blk_remove(struct mmc_card *card)
 		mmc_blk_put(md);
 	}
 	mmc_set_drvdata(card, NULL);
+#ifdef CONFIG_MMC_BLOCK_DEFERRED_RESUME
+	mmc_set_bus_resume_policy(card->host, 0);
+#endif
 }
 
 #ifdef CONFIG_PM
@@ -658,7 +697,9 @@ static int mmc_blk_resume(struct mmc_card *card)
 	struct mmc_blk_data *md = mmc_get_drvdata(card);
 
 	if (md) {
+#ifndef CONFIG_MMC_BLOCK_DEFERRED_RESUME
 		mmc_blk_set_blksize(md, card);
+#endif
 		mmc_queue_resume(&md->queue);
 	}
 	return 0;

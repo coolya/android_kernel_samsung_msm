@@ -121,7 +121,7 @@ static int mmc_decode_csd(struct mmc_card *card)
 	 * v1.2 has extra information in bits 15, 11 and 10.
 	 */
 	csd_struct = UNSTUFF_BITS(resp, 126, 2);
-	if (csd_struct != 1 && csd_struct != 2) {
+	if (csd_struct != 1 && csd_struct != 2 && csd_struct != 3) {
 		printk(KERN_ERR "%s: unrecognised CSD structure version %d\n",
 			mmc_hostname(card->host), csd_struct);
 		return -EINVAL;
@@ -207,7 +207,7 @@ static int mmc_read_ext_csd(struct mmc_card *card)
 	}
 
 	card->ext_csd.rev = ext_csd[EXT_CSD_REV];
-	if (card->ext_csd.rev > 3) {
+	if (card->ext_csd.rev > 5) {
 		printk(KERN_ERR "%s: unrecognised EXT_CSD structure "
 			"version %d\n", mmc_hostname(card->host),
 			card->ext_csd.rev);
@@ -225,7 +225,8 @@ static int mmc_read_ext_csd(struct mmc_card *card)
 			mmc_card_set_blockaddr(card);
 	}
 
-	switch (ext_csd[EXT_CSD_CARD_TYPE]) {
+	switch (ext_csd[EXT_CSD_CARD_TYPE] &&
+			(EXT_CSD_CARD_TYPE_52 | EXT_CSD_CARD_TYPE_26)) {
 	case EXT_CSD_CARD_TYPE_52 | EXT_CSD_CARD_TYPE_26:
 		card->ext_csd.hs_max_dtr = 52000000;
 		break;
@@ -450,14 +451,20 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 	    (host->caps & (MMC_CAP_4_BIT_DATA | MMC_CAP_8_BIT_DATA))) {
 		unsigned ext_csd_bit, bus_width;
 
-		if (host->caps & MMC_CAP_8_BIT_DATA) {
+		if ((host->caps & MMC_CAP_8_BIT_DATA) &&
+				!(mmc_bustest(host, card, MMC_BUS_WIDTH_8))) {
+			pr_info("Setting the bus width to 8 bit\n");
 			ext_csd_bit = EXT_CSD_BUS_WIDTH_8;
 			bus_width = MMC_BUS_WIDTH_8;
-		} else {
+		} else if (!(mmc_bustest(host, card, MMC_BUS_WIDTH_4))) {
+			pr_info("Setting the bus width to 4 bit\n");
 			ext_csd_bit = EXT_CSD_BUS_WIDTH_4;
 			bus_width = MMC_BUS_WIDTH_4;
+		} else {
+			pr_info("Setting the bus width to 1 bit\n");
+			ext_csd_bit = EXT_CSD_BUS_WIDTH_1;
+			bus_width = MMC_BUS_WIDTH_1;
 		}
-
 		err = mmc_switch(card, EXT_CSD_CMD_SET_NORMAL,
 				 EXT_CSD_BUS_WIDTH, ext_csd_bit);
 

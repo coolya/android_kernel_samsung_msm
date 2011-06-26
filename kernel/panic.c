@@ -29,7 +29,10 @@ static int pause_on_oops;
 static int pause_on_oops_flag;
 static DEFINE_SPINLOCK(pause_on_oops_lock);
 
-int panic_timeout;
+#ifndef CONFIG_PANIC_TIMEOUT
+#define CONFIG_PANIC_TIMEOUT 0
+#endif
+int panic_timeout = CONFIG_PANIC_TIMEOUT;
 
 ATOMIC_NOTIFIER_HEAD(panic_notifier_list);
 
@@ -52,6 +55,23 @@ EXPORT_SYMBOL(panic_blink);
  *
  *	This function never returns.
  */
+
+#if defined(CONFIG_MACH_EUROPA) || defined(CONFIG_MACH_CALLISTO) || defined(CONFIG_MACH_COOPER) || defined(CONFIG_MACH_BENI) || defined(CONFIG_MACH_TASS) || defined(CONFIG_MACH_LUCAS)
+#include "../arch/arm/mach-msm/smd_private.h" 
+#include "../arch/arm/mach-msm/proc_comm.h"
+#include <mach/msm_iomap-7xxx.h>
+#include <mach/msm_iomap.h>
+#include <asm/io.h>
+
+struct smem_info {
+	unsigned int info;
+};
+
+extern struct smem_info *smem_flag;
+extern int dump_enable_flag;
+#include <asm/io.h>
+#endif
+
 NORET_TYPE void panic(const char * fmt, ...)
 {
 	static char buf[1024];
@@ -72,6 +92,17 @@ NORET_TYPE void panic(const char * fmt, ...)
 	printk(KERN_EMERG "Kernel panic - not syncing: %s\n",buf);
 #ifdef CONFIG_DEBUG_BUGVERBOSE
 	dump_stack();
+#endif
+
+#if defined(CONFIG_MACH_EUROPA) || defined(CONFIG_MACH_CALLISTO) || defined(CONFIG_MACH_COOPER) || defined(CONFIG_MACH_BENI) || defined(CONFIG_MACH_TASS) || defined(CONFIG_MACH_LUCAS)
+	if(dump_enable_flag)
+		writel(0xCCCC, MSM_SHARED_RAM_BASE + 0x30); 	// dump mode
+	else {
+		smem_flag->info = 0xAEAEAEAE;
+	}
+
+	printk("[PANIC] call msm_proc_comm_reset_modem_now func\n");
+	msm_proc_comm_reset_modem_now();
 #endif
 
 	/*

@@ -15,10 +15,12 @@
 #include <linux/console.h>
 #include <linux/cpu.h>
 #include <linux/syscalls.h>
-
 #include "power.h"
 
 const char *const pm_states[PM_SUSPEND_MAX] = {
+#ifdef CONFIG_EARLYSUSPEND
+	[PM_SUSPEND_ON]		= "on",
+#endif
 	[PM_SUSPEND_STANDBY]	= "standby",
 	[PM_SUSPEND_MEM]	= "mem",
 };
@@ -186,9 +188,11 @@ static int suspend_enter(suspend_state_t state)
  *				    sleep state.
  *	@state:		  state to enter
  */
+
 int suspend_devices_and_enter(suspend_state_t state)
 {
 	int error;
+	int i;
 
 	if (!suspend_ops)
 		return -ENOSYS;
@@ -198,6 +202,7 @@ int suspend_devices_and_enter(suspend_state_t state)
 		if (error)
 			goto Close;
 	}
+	
 	suspend_console();
 	suspend_test_start();
 	error = dpm_suspend_start(PMSG_SUSPEND);

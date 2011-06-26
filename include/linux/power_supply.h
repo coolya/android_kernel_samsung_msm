@@ -16,6 +16,7 @@
 #include <linux/device.h>
 #include <linux/workqueue.h>
 #include <linux/leds.h>
+#include <linux/wakelock.h>
 
 /*
  * All voltages, currents, charges, energies, time and temperatures in uV,
@@ -108,6 +109,17 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_CAPACITY, /* in percents! */
 	POWER_SUPPLY_PROP_CAPACITY_LEVEL,
 	POWER_SUPPLY_PROP_TEMP,
+	POWER_SUPPLY_PROP_BATT_TEMP,
+	POWER_SUPPLY_PROP_BATT_TEMP_ADC,
+	POWER_SUPPLY_PROP_BATT_VOL,
+	POWER_SUPPLY_PROP_BATT_VOL_ADC,
+	POWER_SUPPLY_PROP_BATT_VF_ADC,
+	
+	POWER_SUPPLY_PROP_BATT_VOL_ADC_AVER,
+	POWER_SUPPLY_PROP_BATT_TEMP_ADC_AVER,
+	POWER_SUPPLY_PROP_BATT_VOL_AVER,
+	POWER_SUPPLY_PROP_BATT_TEMP_AVER,
+
 	POWER_SUPPLY_PROP_TEMP_AMBIENT,
 	POWER_SUPPLY_PROP_TIME_TO_EMPTY_NOW,
 	POWER_SUPPLY_PROP_TIME_TO_EMPTY_AVG,
@@ -152,6 +164,9 @@ struct power_supply {
 	/* private */
 	struct device *dev;
 	struct work_struct changed_work;
+	spinlock_t changed_lock;
+	bool changed;
+	struct wake_lock work_wake_lock;
 
 #ifdef CONFIG_LEDS_TRIGGERS
 	struct led_trigger *charging_full_trig;

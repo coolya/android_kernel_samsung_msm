@@ -1,6 +1,7 @@
 /* arch/arm/mach-msm/include/mach/vmalloc.h
  *
  * Copyright (C) 2007 Google, Inc.
+ * Copyright (c) 2009, Code Aurora Forum. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -16,7 +17,19 @@
 #ifndef __ASM_ARCH_MSM_VMALLOC_H
 #define __ASM_ARCH_MSM_VMALLOC_H
 
-#define VMALLOC_END	  (PAGE_OFFSET + 0x10000000)
+/* qualcomm 2010.12.23.
+	Move the vmalloc region up by 256MB so that the kernel can
+	directly map-in 512 MB RAM with a 3G/1G split. Also ensure that
+	the vmalloc space remains at the same location with 2G/2G split.
+*/
+
+#ifdef CONFIG_VMSPLIT_2G
+//#define VMALLOC_END	  (PAGE_OFFSET + 0x60000000) // orig
+#define VMALLOC_END	  (PAGE_OFFSET + 0x70000000)
+#else
+//#define VMALLOC_END	  (PAGE_OFFSET + 0x20000000) // orig
+#define VMALLOC_END	  (PAGE_OFFSET + 0x30000000)
+#endif
 
 #endif
 

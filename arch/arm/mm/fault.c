@@ -22,6 +22,10 @@
 #include <asm/system.h>
 #include <asm/pgtable.h>
 #include <asm/tlbflush.h>
+#ifdef CONFIG_ARCH_MSM_SCORPION
+#include <asm/io.h>
+#include <mach/msm_iomap.h>
+#endif
 
 #include "fault.h"
 
@@ -32,6 +36,8 @@
 #define FSR_WRITE		(1 << 11)
 #define FSR_FS4			(1 << 10)
 #define FSR_FS3_0		(15)
+
+extern int dump_enable_flag;		// debug level : high (user fault)
 
 static inline int fsr_fs(unsigned int fsr)
 {
@@ -165,6 +171,20 @@ __do_user_fault(struct task_struct *tsk, unsigned long addr,
 		show_regs(regs);
 	}
 #endif
+
+	if(dump_enable_flag == 2)		// debug level : high (user fault)
+	{
+		bust_spinlocks(1);
+		printk(KERN_ALERT
+			"Stop to handle kernel %s at virtual address %08lx\n",
+			(addr < PAGE_SIZE) ? "NULL pointer dereference" :
+			"paging request", addr);
+		
+		show_pte(tsk->mm, addr);
+		die("User fault", regs, fsr);
+		bust_spinlocks(0);
+		do_exit(SIGKILL);
+	}
 
 	tsk->thread.address = addr;
 	tsk->thread.error_code = fsr;
@@ -442,6 +462,49 @@ do_bad(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
 	return 1;
 }
 
+#ifdef CONFIG_ARCH_MSM_SCORPION
+#define __str(x) #x
+#define MRC(x, v1, v2, v4, v5, v6) do {					\
+	unsigned int __##x;						\
+	asm("mrc " __str(v1) ", " __str(v2) ", %0, " __str(v4) ", "	\
+		__str(v5) ", " __str(v6) "\n" \
+		: "=r" (__##x));					\
+	pr_info("%s: %s = 0x%.8x\n", __func__, #x, __##x);		\
+} while(0)
+
+#define MSM_TCSR_SPARE2 (MSM_TCSR_BASE + 0x60)
+
+#endif
+
+static int
+do_imprecise_ext(unsigned long addr, unsigned int fsr, struct pt_regs *regs)
+{
+#ifdef CONFIG_ARCH_MSM_SCORPION
+	MRC(ADFSR,    p15, 0,  c5, c1, 0);
+	MRC(DFSR,     p15, 0,  c5, c0, 0);
+	MRC(ACTLR,    p15, 0,  c1, c0, 1);
+	MRC(EFSR,     p15, 7, c15, c0, 1);
+	MRC(L2SR,     p15, 3, c15, c1, 0);
+	MRC(L2CR0,    p15, 3, c15, c0, 1);
+	MRC(L2CPUESR, p15, 3, c15, c1, 1);
+	MRC(L2CPUCR,  p15, 3, c15, c0, 2);
+	MRC(SPESR,    p15, 1,  c9, c7, 0);
+	MRC(SPCR,     p15, 0,  c9, c7, 0);
+	MRC(DMACHSR,  p15, 1, c11, c0, 0);
+	MRC(DMACHESR, p15, 1, c11, c0, 1);
+	MRC(DMACHCR,  p15, 0, c11, c0, 2);
+
+	/* clear out EFSR and ADFSR after fault */
+	asm volatile ("mcr p15, 7, %0, c15, c0, 1\n\t"
+		      "mcr p15, 0, %0, c5, c1, 0"
+		      : : "r" (0));
+#endif
+#ifdef CONFIG_ARCH_MSM_SCORPION
+	/* pr_info("%s: TCSR_SPARE2 = 0x%.8x\n", __func__, readl(MSM_TCSR_SPARE2)); */
+#endif
+	return 1;
+}
+
 static struct fsr_info {
 	int	(*fn)(unsigned long addr, unsigned int fsr, struct pt_regs *regs);
 	int	sig;
@@ -479,7 +542,7 @@ static struct fsr_info {
 	{ do_bad,		SIGBUS,  0,		"unknown 19"			   },
 	{ do_bad,		SIGBUS,  0,		"lock abort"			   }, /* xscale */
 	{ do_bad,		SIGBUS,  0,		"unknown 21"			   },
-	{ do_bad,		SIGBUS,  BUS_OBJERR,	"imprecise external abort"	   }, /* xscale */
+	{ do_imprecise_ext,	SIGBUS,  BUS_OBJERR,	"imprecise external abort"	   }, /* xscale */
 	{ do_bad,		SIGBUS,  0,		"unknown 23"			   },
 	{ do_bad,		SIGBUS,  0,		"dcache parity error"		   }, /* xscale */
 	{ do_bad,		SIGBUS,  0,		"unknown 25"			   },

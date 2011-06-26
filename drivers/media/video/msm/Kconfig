@@ -1,0 +1,129 @@
+comment "Camera Sensor Selection"
+config MT9T013
+	bool "Sensor mt9t013 (BAYER 3M)"
+	depends on MSM_CAMERA
+	default n
+	---help---
+	  MICRON 3M Bayer Sensor with AutoFocus
+
+config MT9D112
+	bool "Sensor mt9d112 (YUV 2M)"
+	depends on MSM_CAMERA
+	default n
+	---help---
+	  MICRON 2M YUV Sensor
+
+config S5K4CA
+	bool "Sensor s5k4ca (3M)"
+	default n
+	---help---
+	  SAMSUNG 3M CMOS Sensor
+
+config SR200PC10
+	bool "Sensor sr200pc10 (2M)"
+	default n
+	---help---
+	  SILICON-FILE 2M CMOS Sensor
+
+config S5K5CA
+	bool "Sensor s5k5ca 1/5 (3M)"
+	default n
+	---help---
+	  SAMSUNG 3M CMOS Sensor
+
+config S5K5CAFF
+	bool "Sensor s5k5caff 1/5 (3M)"
+	default n
+	---help---
+	  SAMSUNG 3M CMOS Sensor
+
+config S5K5CCAF
+	bool "Sensor s5k5cc 1/5 (3M/AF)"
+	default n
+	---help---
+	  SAMSUNG 3M CMOS Sensor
+
+
+
+config S5K5CCFF
+	bool "Sensor s5k5cc 1/5 (3M/FF)"
+	default n
+	---help---
+	  SAMSUNG 3M CMOS Sensor
+
+
+config ISX006
+	bool "Sensor isx006 (5M)"
+	default n
+	---help---
+	  SONY 5M CMOS Sensor 
+
+config S5K4ECGX
+	bool "Sensor s5k4ecgx (5M)"
+	default n
+	---help---
+	  SAMSUNG LSI 5M CMOS Sensor 	  
+
+config S5K4ECGX_COOPER
+	bool "Sensor s5k4ecgx (5M)"
+	default n
+	---help---
+	  SAMSUNG LSI 5M CMOS Sensor 	  
+
+config MT9P012
+	bool "Sensor mt9p012 (BAYER 5M)"
+	depends on MSM_CAMERA
+	default n
+	---help---
+	  MICRON 5M Bayer Sensor with Autofocus
+
+choice
+	prompt "AF module"
+	depends on MT9P012
+	default MSM_CAMERA_AF_FOXCONN
+
+config MSM_CAMERA_AF_FOXCONN
+	bool "FOXCONN Module"
+	help
+	  This driver supports FOXCONN AF module for 5M Bayer sensor
+
+config MSM_CAMERA_AF_BAM
+	bool "BAM Module"
+	help
+	  This driver supports BAM AF module for 5M Bayer sensor
+
+endchoice
+
+config MT9P012_KM
+	bool "Sensor mt9p012 KM module (BAYER 5M)"
+	depends on MSM_CAMERA
+	default y
+	---help---
+	  MICRON 5M Bayer Sensor KM modules with Autofocus
+
+config S5K3E2FX
+	bool "Sensor s5k3e2fx (Samsung 5M)"
+	depends on MSM_CAMERA
+	default y
+	---help---
+	  Samsung 5M with Autofocus
+
+config VB6801
+	bool "Sensor vb6801"
+	depends on MSM_CAMERA
+	---help---
+	  5M with flash
+
+config MSM_CAMERA_FLASH
+	bool "Qualcomm MSM camera flash support"
+	depends on MSM_CAMERA
+	default y
+	---help---
+	  Enable support for LED flash for msm camera
+
+config MSM_GEMINI
+	tristate "Qualcomm MSM Gemini Jpeg Engine support"
+	depends on MSM_CAMERA
+	default M
+	---help---
+	  Enable support for Gemini Jpeg Engine
