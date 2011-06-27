@@ -458,12 +458,90 @@ static noinline void __init_refok rest_init(void)
 	/* Call into cpu_idle with preempt disabled */
 	cpu_idle();
 }
+#if defined (CONFIG_MSM_ARM9_USES_UART3)
+int arm9_uses_uart3=0;
+#endif
+
+#if defined(CONFIG_MACH_EUROPA) || defined(CONFIG_MACH_CALLISTO) || defined(CONFIG_MACH_COOPER) || defined(CONFIG_MACH_BENI) || defined(CONFIG_MACH_TASS) || defined(CONFIG_MACH_LUCAS)
+unsigned int board_hw_revision;
+#endif
 
 /* Check for early params. */
 static int __init do_early_param(char *param, char *val)
 {
 	struct obs_kernel_param *p;
 
+#if defined (CONFIG_MSM_ARM9_USES_UART3)
+	if ( (strcmp(param, "console") == 0 )
+		&& (( strcmp(val, "NULL") == 0 )
+			|| (strcmp(val, "null") == 0))
+		)
+		arm9_uses_uart3 = 1;
+#endif
+
+#if 1 /* added by gtuo.park for H/W revision */
+#if defined(CONFIG_MACH_EUROPA)
+	if ( (strcmp(param, "hw") == 0 ) )
+	{
+		if( strcmp(val, "2") == 0 )
+			board_hw_revision = 2;
+		else if (strcmp(val, "3") == 0)
+			board_hw_revision = 3;
+		else if (strcmp(val, "4") == 0)
+			board_hw_revision = 4;
+		else	
+			board_hw_revision = 0;
+		printk("Europa H/W revision : 0x0%d\n",board_hw_revision);
+	}
+#endif
+#if defined(CONFIG_MACH_CALLISTO) || defined(CONFIG_MACH_BENI) || defined(CONFIG_MACH_TASS) || defined(CONFIG_MACH_LUCAS)
+	if ( (strcmp(param, "hw") == 0 ) )
+	{
+		if (strcmp(val, "1") == 0)
+			board_hw_revision = 1;
+		else if (strcmp(val, "2") == 0)
+			board_hw_revision = 2;
+		else if (strcmp(val, "3") == 0)
+			board_hw_revision = 3;
+		else if (strcmp(val, "4") == 0)
+			board_hw_revision = 4;
+		else if (strcmp(val, "5") == 0)
+			board_hw_revision = 5;
+		else if (strcmp(val, "6") == 0)
+			board_hw_revision = 6;
+		else if (strcmp(val, "7") == 0)
+			board_hw_revision = 7;
+		else	
+			board_hw_revision = 0;
+		printk("Callisto H/W revision : 0x0%d\n",board_hw_revision);
+	}
+#endif
+		
+#if defined(CONFIG_MACH_COOPER) 
+	if ( (strcmp(param, "hw") == 0 ) )
+	{
+		if (strcmp(val, "1") == 0)
+			board_hw_revision = 1;
+		else if (strcmp(val, "2") == 0)
+			board_hw_revision = 2;
+		else if (strcmp(val, "3") == 0)
+			board_hw_revision = 3;
+		else if (strcmp(val, "4") == 0)
+			board_hw_revision = 4;
+		else if (strcmp(val, "5") == 0)
+			board_hw_revision = 5;
+		else if (strcmp(val, "6") == 0)
+			board_hw_revision = 6;
+		else if (strcmp(val, "7") == 0)
+			board_hw_revision = 7;
+		else	
+			board_hw_revision = 0;
+		printk("Cooper H/W revision : 0x0%d\n",board_hw_revision);
+	}
+#endif
+	// for Revision in /proc/cpuinfo 
+	system_rev = board_hw_revision;
+#endif
 	for (p = __setup_start; p < __setup_end; p++) {
 		if ((p->early && strcmp(param, p->str) == 0) ||
 		    (strcmp(param, "console") == 0 &&

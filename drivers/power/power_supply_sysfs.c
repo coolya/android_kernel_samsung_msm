@@ -158,6 +158,18 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(capacity),
 	POWER_SUPPLY_ATTR(capacity_level),
 	POWER_SUPPLY_ATTR(temp),
+
+	POWER_SUPPLY_ATTR(batt_temp),
+	POWER_SUPPLY_ATTR(batt_temp_adc),	
+	POWER_SUPPLY_ATTR(batt_vol),
+	POWER_SUPPLY_ATTR(batt_vol_adc),
+	POWER_SUPPLY_ATTR(batt_vf_adc),
+
+	POWER_SUPPLY_ATTR(batt_vol_adc_aver),
+	POWER_SUPPLY_ATTR(batt_temp_adc_aver),	
+	POWER_SUPPLY_ATTR(batt_vol_aver),
+	POWER_SUPPLY_ATTR(batt_temp_aver),	
+	
 	POWER_SUPPLY_ATTR(temp_ambient),
 	POWER_SUPPLY_ATTR(time_to_empty_now),
 	POWER_SUPPLY_ATTR(time_to_empty_avg),

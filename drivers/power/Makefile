@@ -34,3 +34,27 @@ obj-$(CONFIG_BATTERY_DA9030)	+= da9030_battery.o
 obj-$(CONFIG_BATTERY_MAX17040)	+= max17040_battery.o
 obj-$(CONFIG_BATTERY_Z2)	+= z2_battery.o
 obj-$(CONFIG_CHARGER_PCF50633)	+= pcf50633-charger.o
+#obj-$(CONFIG_BATTERY_MSM)	+= msm_battery.o
+#obj-$(CONFIG_BATTERY_MSM8X60)	+= msm_charger.o
+#obj-$(CONFIG_PM8058_CHARGER)	+= pmic8058-charger.o
+obj-$(CONFIG_ISL9519_CHARGER)	+= isl9519q.o
+#obj-$(CONFIG_PM8058_FIX_USB)	+= pm8058_usb_fix.o
+obj-$(CONFIG_BATTERY_QCIBAT)	+= qci_battery.o
+ifeq ($(CONFIG_MACH_EUROPA),y)
+obj-$(CONFIG_BATTERY_MSM)	+= europa_battery.o
+endif
+ifeq ($(CONFIG_MACH_COOPER),y)
+obj-$(CONFIG_BATTERY_MSM)	+= cooper_battery.o
+endif
+ifeq ($(CONFIG_MACH_BENI),y)
+obj-$(CONFIG_BATTERY_MSM)	+= beni_battery.o
+endif
+ifeq ($(CONFIG_MACH_TASS),y)
+obj-$(CONFIG_BATTERY_MSM)	+= tass_battery.o
+endif
+ifeq ($(CONFIG_MACH_LUCAS),y)
+obj-$(CONFIG_BATTERY_MSM)	+= lucas_battery.o
+endif
+ifeq ($(CONFIG_MACH_CALLISTO),y)
+obj-$(CONFIG_BATTERY_MSM)	+= callisto_battery.o
+endif

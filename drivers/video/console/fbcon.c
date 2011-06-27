@@ -3519,9 +3519,50 @@ static void fbcon_exit(void)
 	fbcon_has_exited = 1;
 }
 
+//[ Europa workaround : prevent adnormal samsung logo right before i5500 logo
+#define FB_LINE_LENGTH	(240*2)
+#if defined(CONFIG_MACH_CALLISTO)
+#define FB_Y_SIZE	400
+#elif defined(CONFIG_MACH_COOPER)
+#define FB_Y_SIZE	480
+#elif defined(CONFIG_MACH_LUCAS)
+#define FB_Y_SIZE	400
+#elif defined(CONFIG_MACH_EUROPA) || defined(CONFIG_MACH_BENI) || defined(CONFIG_MACH_TASS)
+#define FB_Y_SIZE	320
+#endif
+static unsigned long fbaddr = 0L;
+//]
+
+extern int lcdc_ta8566_ldi_off(void); // 20100915
+
 static int __init fb_console_init(void)
 {
 	int i;
+
+//[ Europa workaround : prevent adnormal samsung logo right before i5500 logo
+	void * tmpfb;
+
+	if(fbaddr)
+		{
+		printk(KERN_INFO "fbaddr cmdline is 0x%x\n", (u32)fbaddr);
+		tmpfb = ioremap(fbaddr, FB_LINE_LENGTH*FB_Y_SIZE);
+		if(tmpfb)
+			{
+			memset(tmpfb, 0x00, FB_LINE_LENGTH*FB_Y_SIZE);
+			iounmap(tmpfb);
+			mdelay(60);
+			}
+		else
+			printk(KERN_ERR "tmpfb ioremap failed\n");
+		}
+	else
+		{
+		printk(KERN_ERR "fbaddr cmdline is null\n");
+		}
+#if defined(CONFIG_FB_MSM_LCDC_TA8566_WQVGA)       
+	lcdc_ta8566_ldi_off();   // 20100915
+#endif
+//]
 
 	acquire_console_sem();
 	fb_register_client(&fbcon_event_notifier);

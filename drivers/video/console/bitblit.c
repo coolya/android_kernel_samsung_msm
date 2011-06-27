@@ -246,6 +246,8 @@ static void bit_cursor(struct vc_data *vc, struct fb_info *info, int mode,
 	int err = 1;
 	char *src;
 
+	return; // not to display cursor.
+
 	cursor.set = 0;
 
 	if (softback_lines) {

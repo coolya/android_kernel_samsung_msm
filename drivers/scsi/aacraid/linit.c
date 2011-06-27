@@ -206,6 +206,10 @@ static struct aac_driver_ident aac_drivers[] = {
 	{ aac_rkt_init, "aacraid",  "ICP     ", "ICP9067MA       ", 1 }, /* ICP9067MA (Intruder-6) */
 	{ NULL        , "aacraid",  "ADAPTEC ", "Themisto        ", 0, AAC_QUIRK_SLAVE }, /* Jupiter Platform */
 	{ aac_rkt_init, "aacraid",  "ADAPTEC ", "Callisto        ", 2, AAC_QUIRK_MASTER }, /* Jupiter Platform */
+	{ aac_rkt_init, "aacraid",  "ADAPTEC ", "Cooper        ", 2, AAC_QUIRK_MASTER }, /* Jupiter Platform */
+	{ aac_rkt_init, "aacraid",  "ADAPTEC ", "Bani        ", 2, AAC_QUIRK_MASTER }, /* Jupiter Platform */
+	{ aac_rkt_init, "aacraid",  "ADAPTEC ", "Tass        ", 2, AAC_QUIRK_MASTER }, /* Jupiter Platform */	
+	{ aac_rkt_init, "aacraid",  "ADAPTEC ", "Lucas        ", 2, AAC_QUIRK_MASTER }, /* Jupiter Platform */
 	{ aac_rx_init, "aacraid",  "ADAPTEC ", "ASR-2020SA       ", 1 }, /* ASR-2020SA SATA PCI-X ZCR (Skyhawk) */
 	{ aac_rx_init, "aacraid",  "ADAPTEC ", "ASR-2025SA       ", 1 }, /* ASR-2025SA SATA SO-DIMM PCI-X ZCR (Terminator) */
 	{ aac_rx_init, "aacraid",  "ADAPTEC ", "AAR-2410SA SATA ", 1, AAC_QUIRK_17SG }, /* AAR-2410SA PCI SATA 4ch (Jaguar II) */

@@ -26,4 +26,23 @@ int vreg_enable(struct vreg *vreg);
 int vreg_disable(struct vreg *vreg);
 int vreg_set_level(struct vreg *vreg, unsigned mv);
 
+/* OUT voltage setting */
+typedef enum {
+	OUT1200mV = 0,
+	OUT1500mV,
+	OUT1600mV,
+	OUT1800mV,
+	OUT2100mV,
+	OUT2500mV,
+	OUT2600mV,
+	OUT2650mV,
+	OUT2700mV,
+	OUT2800mV,
+	OUT2850mV,
+	OUT2900mV,
+	OUT3000mV,
+	OUT3100mV,
+	OUT3300mV,
+	FAIL_VOLT
+} out_voltage_type;
 #endif

@@ -91,6 +91,17 @@ static void sync_filesystems(int wait)
 	iterate_supers(sync_one_sb, &wait);
 }
 
+//added to execute do_sync before executing drop_caches
+void do_sync(void)
+{
+	wakeup_flusher_threads(0);
+	sync_filesystems(0);
+	sync_filesystems(1);
+	if (unlikely(laptop_mode))
+		laptop_sync_completion();
+	return ;
+}
+
 /*
  * sync everything.  Start out by waking pdflush, because that writes back
  * all queues in parallel.

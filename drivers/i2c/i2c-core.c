@@ -341,7 +341,7 @@ struct bus_type i2c_bus_type = {
 	.probe		= i2c_device_probe,
 	.remove		= i2c_device_remove,
 	.shutdown	= i2c_device_shutdown,
-	.pm		= &i2c_device_pm_ops,
+//	.pm		= &i2c_device_pm_ops,	//hsil
 };
 EXPORT_SYMBOL_GPL(i2c_bus_type);
 

@@ -24,6 +24,14 @@
 
 #include "proc_comm.h"
 
+#if defined(CONFIG_MSM_VREG_SWITCH_INVERTED)
+#define VREG_SWITCH_ENABLE 0
+#define VREG_SWITCH_DISABLE 1
+#else
+#define VREG_SWITCH_ENABLE 1
+#define VREG_SWITCH_DISABLE 0
+#endif
+
 struct vreg {
 	const char *name;
 	unsigned id;
@@ -60,29 +68,48 @@ static struct vreg vregs[] = {
 	VREG("gp5",	22, 0, 0),
 	VREG("gp6",	23, 0, 0),
 	VREG("rf",	24, 0, 0),
-	VREG("rf_vco",	26, 0, 0),
-	VREG("mpll",	27, 0, 0),
-	VREG("s2",	28, 0, 0),
-	VREG("s3",	29, 0, 0),
-	VREG("rfubm",	30, 0, 0),
-	VREG("ncp",	31, 0, 0),
-	VREG("gp7",	32, 0, 0),
-	VREG("gp8",	33, 0, 0),
-	VREG("gp9",	34, 0, 0),
-	VREG("gp10",	35, 0, 0),
-	VREG("gp11",	36, 0, 0),
-	VREG("gp12",	37, 0, 0),
-	VREG("gp13",	38, 0, 0),
-	VREG("gp14",	39, 0, 0),
-	VREG("gp15",	40, 0, 0),
-	VREG("gp16",	41, 0, 0),
-	VREG("gp17",	42, 0, 0),
-	VREG("s4",	43, 0, 0),
-	VREG("usb2",	44, 0, 0),
-	VREG("wlan2",	45, 0, 0),
-	VREG("xo_out",	46, 0, 0),
-	VREG("lvsw0",	47, 0, 0),
-	VREG("lvsw1",	48, 0, 0),
+	VREG("rf_vco",	25, 0, 0),
+	VREG("mpll",	26, 0, 0),
+	VREG("s2",	27, 0, 0),
+	VREG("s3",	28, 0, 0),
+	VREG("rfubm",	29, 0, 0),
+	VREG("ncp",	30, 0, 0),
+	VREG("gp7",	31, 0, 0),
+	VREG("gp8",	32, 0, 0),
+	VREG("gp9",	33, 0, 0),
+	VREG("gp10",	34, 0, 0),
+	VREG("gp11",	35, 0, 0),
+	VREG("gp12",	36, 0, 0),
+	VREG("gp13",	37, 0, 0),
+	VREG("gp14",	38, 0, 0),
+	VREG("gp15",	39, 0, 0),
+	VREG("ldo1",	40, 0, 0),
+	VREG("ldo2",	41, 0, 0),
+	VREG("ldo3",	42, 0, 0),
+	VREG("ldo4",	43, 0, 0),
+	VREG("ldo5",	44, 0, 0),
+	VREG("ldo6",	45, 0, 0),
+	VREG("ldo7",	46, 0, 0),
+	VREG("ldo8",	47, 0, 0),
+	VREG("ldo9",	48, 0, 0),
+	VREG("ldo10",	49, 0, 0),
+	VREG("ldo11",	50, 0, 0),
+	VREG("ldo12",	51, 0, 0),
+	VREG("ldo13",	52, 0, 0),
+	VREG("ldo14",	53, 0, 0),
+	VREG("ldo15",	54, 0, 0),
+	VREG("ldo16",	55, 0, 0),
+	VREG("ldo17",	56, 0, 0),
+	VREG("ldo18",	57, 0, 0),
+	VREG("ldo19",	58, 0, 0),
+	VREG("gp16",	59, 0, 0),
+	VREG("gp17",	60, 0, 0),
+	VREG("s4",	61, 0, 0),
+	VREG("usb2",	62, 0, 0),
+	VREG("wlan2",	63, 0, 0),
+	VREG("xo_out",	64, 0, 0),
+	VREG("lvsw0",	65, 0, 0),
+	VREG("lvsw1",	66, 0, 0),
 };
 
 struct vreg *vreg_get(struct device *dev, const char *id)
@@ -94,6 +121,7 @@ struct vreg *vreg_get(struct device *dev, const char *id)
 	}
 	return ERR_PTR(-ENOENT);
 }
+EXPORT_SYMBOL(vreg_get);
 
 void vreg_put(struct vreg *vreg)
 {
@@ -102,7 +130,7 @@ void vreg_put(struct vreg *vreg)
 int vreg_enable(struct vreg *vreg)
 {
 	unsigned id = vreg->id;
-	unsigned enable = 1;
+	int enable = VREG_SWITCH_ENABLE;
 
 	if (vreg->refcnt == 0)
 		vreg->status = msm_proc_comm(PCOM_VREG_SWITCH, &id, &enable);
@@ -112,24 +140,27 @@ int vreg_enable(struct vreg *vreg)
 
 	return vreg->status;
 }
+EXPORT_SYMBOL(vreg_enable);
 
 int vreg_disable(struct vreg *vreg)
 {
 	unsigned id = vreg->id;
-	unsigned enable = 0;
+	int disable = VREG_SWITCH_DISABLE;
 
 	if (!vreg->refcnt)
 		return 0;
 
 	if (vreg->refcnt == 1)
-		vreg->status = msm_proc_comm(PCOM_VREG_SWITCH, &id, &enable);
+		vreg->status = msm_proc_comm(PCOM_VREG_SWITCH, &id, &disable);
 
 	if (!vreg->status)
 		vreg->refcnt--;
 
 	return vreg->status;
 }
+EXPORT_SYMBOL(vreg_disable);
 
+#if 0 //MAX8899 PMIC
 int vreg_set_level(struct vreg *vreg, unsigned mv)
 {
 	unsigned id = vreg->id;
@@ -137,6 +168,22 @@ int vreg_set_level(struct vreg *vreg, unsigned mv)
 	vreg->status = msm_proc_comm(PCOM_VREG_SET_LEVEL, &id, &mv);
 	return vreg->status;
 }
+#else
+int vreg_set_level(struct vreg *vreg, out_voltage_type mv)
+{
+	unsigned id = vreg->id;
+
+	if(mv >= FAIL_VOLT) {
+		printk(KERN_ERR "[VREG] %s : invalid vreg_level\n", __func__);
+		return 1; //Error
+	}
+
+	vreg->status = msm_proc_comm(PCOM_VREG_SET_LEVEL, &id, &mv);
+	return vreg->status;
+}
+#endif
+
+EXPORT_SYMBOL(vreg_set_level);
 
 #if defined(CONFIG_DEBUG_FS)
 

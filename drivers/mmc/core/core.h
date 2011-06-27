@@ -65,5 +65,8 @@ void mmc_remove_host_debugfs(struct mmc_host *host);
 void mmc_add_card_debugfs(struct mmc_card *card);
 void mmc_remove_card_debugfs(struct mmc_card *card);
 
+// add by qualcomm
+void mmc_power_up(struct mmc_host *host);
+void mmc_power_off(struct mmc_host *host);
 #endif
 
