@@ -73,7 +73,6 @@ obj-$(CONFIG_EXT4_FS)		+= ext4/
 obj-$(CONFIG_JBD)		+= jbd/
 obj-$(CONFIG_JBD2)		+= jbd2/
 obj-$(CONFIG_CRAMFS)		+= cramfs/
-obj-$(CONFIG_RFS_FS)		+= rfs/
 obj-$(CONFIG_SQUASHFS)		+= squashfs/
 obj-y				+= ramfs/
 obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
