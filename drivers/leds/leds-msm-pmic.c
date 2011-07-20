@@ -36,7 +36,22 @@ static unsigned char n_GPIO_KEY_LED_EN = 97;
 #endif
 #if defined(CONFIG_MACH_COOPER)
 static struct vreg *vreg_keyled;
+static int state;
 #endif
+
+static void set_led(int value)
+{
+	if (value > 0)
+			{
+				vreg_enable(vreg_keyled);
+				printk("[KeyLED] %s: vreg_enable\n", __func__);
+			}
+			else
+			{
+				vreg_disable(vreg_keyled);
+				printk("[KeyLED] %s: vreg_disable\n", __func__);
+			}
+}
 
 static void msm_keypad_bl_led_set(struct led_classdev *led_cdev,
 	enum led_brightness value)
@@ -47,19 +62,29 @@ static void msm_keypad_bl_led_set(struct led_classdev *led_cdev,
 	printk("[KeyLED] %s: value=%d\n", __func__, value);
 
 #if defined(CONFIG_MACH_COOPER)
-	if ( board_hw_revision >= 0x3 )
+
+	if (value > 1) value = 1;
+
+	if(value != state)
 	{
-	if (value)
-		vreg_enable(vreg_keyled);
-	else
-		vreg_disable(vreg_keyled);
-	}
-	else
-	{
-		if (value)
-			gpio_set_value(n_GPIO_KEY_LED_EN, 1);
+		if ( board_hw_revision >= 0x3 )
+		{
+			set_led(value);
+		}
 		else
-			gpio_set_value(n_GPIO_KEY_LED_EN, 0);
+		{
+			if (value > 0)
+			{
+				gpio_set_value(n_GPIO_KEY_LED_EN, 1);
+				printk("[KeyLED] %s: gpio_set_value(1)\n", __func__);
+			}
+			else
+			{
+				gpio_set_value(n_GPIO_KEY_LED_EN, 0);
+				printk("[KeyLED] %s: gpio_set_value(0)\n", __func__);
+			}
+		}
+		state = value;
 	}
 #endif
 
@@ -105,12 +130,13 @@ static int msm_pmic_led_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "unable to register led class driver\n");
 		return rc;
 	}
-	msm_keypad_bl_led_set(&msm_kp_bl_led, LED_OFF);
+	msm_keypad_bl_led_set(&msm_kp_bl_led, LED_FULL);
 	return rc;
 }
 
 static int __devexit msm_pmic_led_remove(struct platform_device *pdev)
 {
+	state = -1;
 	led_classdev_unregister(&msm_kp_bl_led);
 
 	return 0;
@@ -120,6 +146,7 @@ static int __devexit msm_pmic_led_remove(struct platform_device *pdev)
 static int msm_pmic_led_suspend(struct platform_device *dev,
 		pm_message_t state)
 {
+	msm_keypad_bl_led_set(&msm_kp_bl_led, LED_OFF);
 	led_classdev_suspend(&msm_kp_bl_led);
 
 	return 0;
@@ -128,7 +155,7 @@ static int msm_pmic_led_suspend(struct platform_device *dev,
 static int msm_pmic_led_resume(struct platform_device *dev)
 {
 	led_classdev_resume(&msm_kp_bl_led);
-
+	msm_keypad_bl_led_set(&msm_kp_bl_led, LED_FULL);
 	return 0;
 }
 #else
